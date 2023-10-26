@@ -22,7 +22,12 @@ my_year_month_fmt = mdates.DateFormatter('%d/%m/%y')
 
 class Trend:
     def __init__(self, tickers, pos = None, benchmark = None, inicio = dt.datetime.today().date()-dt.timedelta(365), fim = dt.datetime.today().date()):
-        self.inicio = inicio
+        ''' 
+        Definir pode definir o inicio da série histórica, 
+        tickers a serem levados em consideração (incluíndo o benchmark que será automaticamente renomeado)
+        Assim como o fim da série e as posição para cada ativos
+        '''
+        self.inicio = inicio 
         self.fim = fim
         self.tickers = tickers
         self.benchmark = benchmark
@@ -47,6 +52,16 @@ class Trend:
         self.Data = self.Data.bfill().fillna(0)
 
     def retornos(self, tipo = 'pct', dist = ['Long', 'Short']):
+        '''
+        Talvez o mais complicado de entender seja o retorno EWM
+        Ele se baseia em uma média móvel exponencial
+        Dando mais peso aos dados mais recentes
+        
+        Semelhante, porém diferente, do Weighted normal
+        Cria-se pesos de [1, 2, ..., n] em que n é o
+        número de dados na série histórica.
+        Normaliza-se e se aplica os pesos aos retornos
+        '''
         self.retorno = self.Data.pct_change().fillna(0)
         lista = []
         f=0
@@ -98,6 +113,10 @@ class Trend:
         return "{:,.2%}".format(valor)
 
     def di(self, JGP = False, Date = None):
+        '''
+        Essa função puxa o DI
+        Ou simula a Free Rate da competição JGP 2023
+        '''
         self.Date = Date
         if self.Date == None:
             self.Date = pd.to_datetime(self.Data.index).strftime('%d/%m/%y')
@@ -113,6 +132,11 @@ class Trend:
         return self.Download
 
     def medio(self, dias=5, ret = None):
+        '''
+        Retorna uma média móvel
+        Nesse padrão, está totalmente configurado ao EWM
+        O foco desse projeto
+        '''
         if type(dias) == type({}):
             dias = list(dias.values())
         if ret == None:
@@ -120,6 +144,11 @@ class Trend:
         return self.long, self.short
         
     def mediana(self, dias=5, ret = None):
+        '''
+        Retorna uma mediana móvel
+        Nesse padrão, está totalmente configurado ao EWM
+        O foco desse projeto
+        '''
         if type(dias) == type({}):
             dias = list(dias.values())
         if ret == None:
@@ -127,11 +156,26 @@ class Trend:
         return ret.rolling(dias).median()
         
     def trend(self, dias = {'Long':126, 'Short':22}):
+        '''
+        Aqui, se calcula os padrões, a partir das médias
+        móveis 'Long' e 'Short' que se referem, por padrão,
+        a 126 e 22 dias, respectivamente.
+        A subtração entre a Short e a Long leva, na teoria,
+        a discrepância do mercado em relação a essas duas métricas.
+        
+        Seguindo a base teórica do projeto, aqui se torna possível
+        a localização de tendências 'Buy' e 'Sell'
+        '''
         med_l, med_s = self.medio(dias=dias)
         self.dif = (med_s-med_l).dropna()
         return self.dif, med_l, med_s,  self.retornos('A')
     
     def ordens(self):
+        '''
+        Aqui, efetivamente concluímos as condições para 'Buy', 'Sell'
+        e 'Sem mudança', este último se refere a inconclusão dessa análise
+        de qualquer efeito do deslocamento da curva.
+        '''
         tr = self.trend()
         x = tr[0]
         ordens = pd.DataFrame(columns = x.columns, index = tr[0].index)
@@ -142,6 +186,10 @@ class Trend:
         return ordens.fillna('Sem mudança')
     
     def var(self, tipo = 'Param', dias = {'Long':126, 'Short':22}, confianca = 95):
+        '''
+        Criamos aqui o VaR paramétrico com os retornos EWM.
+        Serão fundamental na base de construção dos Stop Gain e Stop Loss.
+        '''
         self.ret_l, self.ret_s = self.retornos('E', dist=list(dias.values()))
         if type(tipo) != type([]):
             tipo = [tipo]
@@ -159,9 +207,17 @@ class Trend:
                 self.var['ERROR'] = []
         return self.var
     
-    def Test(self):
+    def test(self):
+        '''
+        Aqui emularemos o fundo em ação.
+        Teremos as cotações de quando o fundo entrou na posição.
+        Caso o contrário, entraremos em DI.
+        '''
+        Dt = self.Data
         ordem = self.ordens()
-        carteira = pd.DataFrame(columns = ordem.columns)
+        carteira = pd.DataFrame(0, columns = ordem.columns, index=ordem.index)
+        for i in carteira.columns:
+            carteira.loc[((ordem[i] == 'Buy')), i] = Dt.loc[((ordem[i]=='Buy')), i]
         
         # for i in ordens.index:
         #     for _ in ordens.loc[i].values:
@@ -188,7 +244,7 @@ for i in Lista:
   else:
     PPP[i] = 'C'
 
-x = Trend(Lista, PPP, ['^BVSP'], inicio='2003-01-01').ordens()
+x = Trend(Lista, PPP, ['^BVSP'], inicio='2003-01-01').test()
 
 print(x)
 
