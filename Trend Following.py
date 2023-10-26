@@ -12,6 +12,7 @@ import seaborn as sns
 import plotly.express as px
 from scipy import stats
 from sklearn.metrics import r2_score
+from statistics import NormalDist as nd
 
 import pytz
 import datetime as dt
@@ -92,6 +93,10 @@ class Trend:
                 # return self.retorno
                 return self.ret_l, self.ret_s
 
+    def formatar(self, valor):
+        # Copiado do Edu
+        return "{:,.2%}".format(valor)
+
     def di(self, JGP = False, Date = None):
         self.Date = Date
         if self.Date == None:
@@ -106,10 +111,6 @@ class Trend:
             self.Download.index = self.Download.index.str.rstrip(f';"0')
             self.Download['DI'] = self.Download['DI'].str.rstrip(f'"').astype(int)/100000000
         return self.Download
-
-    def formatar(self, valor):
-        # Copiado do Edu
-        return "{:,.2%}".format(valor)
 
     def medio(self, dias=5, ret = None):
         if type(dias) == type({}):
@@ -140,8 +141,27 @@ class Trend:
             ordens.loc[(~((x[i]<0) ^ (x[i].shift(1)<0))),i] = 'Sem mudança'
         return ordens.fillna('Sem mudança')
     
+    def var(self, tipo = 'Param', dias = {'Long':126, 'Short':22}, confianca = 95):
+        self.ret_l, self.ret_s = self.retornos('E', dist=list(dias.values()))
+        if type(tipo) != type([]):
+            tipo = [tipo]
+        if type(confianca) != type([]):
+            confianca = [confianca]
+        self.var = pd.DataFrame(index = self.ret_l.columns.values)
+        for t in tipo:
+            t = t.capitalize()[0]
+        for i in confianca:
+            if t == 'H':
+                self.var[f'VaR Hist {i}%'] = {a:np.percentile(self.ret_l[a], (100-i)) for a in self.ret_l.columns}
+            elif t == 'P':
+                self.var[f'VaR Param {i}%'] = {a:self.ret_l[a].mean() - self.ret_l[a].std()*nd(0, 1).inv_cdf(i/100) for a in self.ret_l.columns}
+            else:
+                self.var['ERROR'] = []
+        return self.var
+    
     def Test(self):
         ordem = self.ordens()
+        carteira = pd.DataFrame(columns = ordem.columns)
         
         # for i in ordens.index:
         #     for _ in ordens.loc[i].values:
@@ -168,7 +188,7 @@ for i in Lista:
   else:
     PPP[i] = 'C'
 
-x = Trend(Lista, PPP, ['^BVSP']).ordens()
+x = Trend(Lista, PPP, ['^BVSP']).var()
 
 print(x)
 
