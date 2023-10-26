@@ -178,8 +178,8 @@ class Trend:
     # Fazer "estabilidade" do C.A. dos retornos (5 dias atras) para 5 dias seguidos e pegar o desvio padrão e validar ou não stop gain |
 
     #Pegar X23 por cada dia e comparar com cotacao dol BRl (cap. derivativos Ana Clara)
-Lista = ['AZUL4.SA', 'EWG', 'BOVA11.SA', 'VALE3.SA', 'SPY', 'XLF', 'XLRE']
-Vendidos = ['AZUL4.SA', 'BOVA11.SA', 'SPY', 'XLRE']
+Lista = ['EWG', 'GLD', 'TLT', 'SPY', 'XLB', 'XLE', 'XLF', 'XLI', 'XLK', 'XLP', 'XLU', 'XLV', 'XLY', 'XTN', 'EWJ', 'EEM', 'EWZ', 'FXE']
+Vendidos = [""]
 
 PPP = {i:"" for i in Lista}
 for i in Lista:
@@ -188,7 +188,7 @@ for i in Lista:
   else:
     PPP[i] = 'C'
 
-x = Trend(Lista, PPP, ['^BVSP']).var()
+x = Trend(Lista, PPP, ['^BVSP'], inicio='2003-01-01').ordens()
 
 print(x)
 
