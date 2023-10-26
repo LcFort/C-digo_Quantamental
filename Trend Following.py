@@ -226,14 +226,15 @@ class Trend:
         # return ordens
         
     
-    # Refazer Trend do Cid: |
-    # Fazer Weighted VaR | 
+    # Refazer Trend do Cid: | Check
+    # Fazer Weighted VaR | Check
     # Fazer Weighted | Check
+    
     # Entrar a partir de certo coeficiente angular (a partir dos retornos da livre de risco de cada região dos ativos) |
-
     # Fazer "estabilidade" do C.A. dos retornos (5 dias atras) para 5 dias seguidos e pegar o desvio padrão e validar ou não stop gain |
 
     #Pegar X23 por cada dia e comparar com cotacao dol BRl (cap. derivativos Ana Clara)
+    
 Lista = ['EWG', 'GLD', 'TLT', 'SPY', 'XLB', 'XLE', 'XLF', 'XLI', 'XLK', 'XLP', 'XLU', 'XLV', 'XLY', 'XTN', 'EWJ', 'EEM', 'EWZ', 'FXE']
 Vendidos = [""]
 
