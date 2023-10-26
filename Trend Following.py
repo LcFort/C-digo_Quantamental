@@ -75,14 +75,12 @@ class Trend:
         elif tipo.capitalize()[0] == 'E': 
             if type(dist) == type([]) and len(dist) == len([" ", " "]): #standard
                 for i in dist:
-                    print(1)
                     # If string, must be Long. If Num, must bem int and the max of the list
                     if type(i) == type(str):
                         if str(i).capitalize()[0] == 'L':
                             self.ret_s = self.retorno.ewm(alpha=0.15, min_periods=132, adjust=False).mean()
                         elif str(i).capitalize()[0] == 'S':
                             self.ret_l = self.retorno.ewm(alpha=0.7, min_periods=22, adjust=False).mean()
-                        print(1)
                     elif type(i) == type(int()):
                         if i == max(dist):
                             self.ret_l = self.retorno.ewm(alpha=0.7, min_periods=i, adjust=False).mean()
@@ -129,13 +127,22 @@ class Trend:
         
     def trend(self, dias = {'Long':126, 'Short':22}):
         med_l, med_s = self.medio(dias=dias)
-        self.dif = (med_s-med_l).fillna(0)
+        self.dif = (med_s-med_l).dropna()
         return self.dif, med_l, med_s,  self.retornos('A')
     
     def ordens(self):
         tr = self.trend()
-        ordens = pd.DataFrame(columns = tr[2].columns, index = tr[2].index)
-        return 1
+        x = tr[0]
+        ordens = pd.DataFrame(columns = x.columns, index = tr[0].index)
+        for i in ordens.columns:
+            ordens.loc[((x[i]>0) & (x[i].shift(1)<0)),i] = 'Buy'
+            ordens.loc[((x[i]<0) & (x[i].shift(1)>0)),i] = 'Sell'
+            ordens.loc[(~((x[i]<0) ^ (x[i].shift(1)<0))),i] = 'Sem mudança'
+        return ordens.fillna('Sem mudança')
+    
+    def Test(self):
+        ordem = self.ordens()
+        
         # for i in ordens.index:
         #     for _ in ordens.loc[i].values:
         #         if tr[0].loc[i] > 0:
@@ -161,9 +168,10 @@ for i in Lista:
   else:
     PPP[i] = 'C'
 
-x, y, z, w = Trend(Lista, PPP, ['^BVSP']).trend()
+x = Trend(Lista, PPP, ['^BVSP']).ordens()
 
-print(x, y, z, w)
+print(x)
+
 # y = ((1+y).cumprod())
 # # px.area(x).show()
 # fig, ax = plt.subplots(1,1,figsize=(12,6))
