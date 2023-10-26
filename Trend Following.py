@@ -115,7 +115,7 @@ class Trend:
     def di(self, JGP = False, Date = None):
         '''
         Essa função puxa o DI
-        Ou simula a Free Rate da competição JGP 2023
+        Ou simula a Risk Free Rate da competição JGP 2023
         '''
         self.Date = Date
         if self.Date == None:
